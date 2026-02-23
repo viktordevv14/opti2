@@ -3,7 +3,7 @@ import { PlusCircle, Search, User, Clipboard, UserPlus, FileText, Trash2, Calend
 import { useLocalStorage } from './useLocalStorage'
 
 function App() {
-  const [activeTab, setActiveTab] = useState('patients')
+  const [activeTab, setActiveTab] = useState('dashboard')
   const [patients, setPatients] = useLocalStorage('opticare-patients', [])
   const [prescriptions, setPrescriptions] = useLocalStorage('opticare-prescriptions', [])
   const [searchTerm, setSearchTerm] = useState('')
@@ -13,7 +13,12 @@ function App() {
   const [viewingPatientId, setViewingPatientId] = useState(null)
 
   // Patient Form State
-  const [newPatient, setNewPatient] = useState({ name: '', dob: '', phone: '', email: '', notes: '' })
+  const [newPatient, setNewPatient] = useState({ 
+    name: '', dob: '', phone: '', email: '', notes: '',
+    sphereL: '0.00', cylinderL: '0.00', axisL: '0',
+    sphereR: '0.00', cylinderR: '0.00', axisR: '0',
+    add: '0.00', frameType: '', lensType: ''
+  })
   
   // Prescription Form State
   const [newPrescription, setNewPrescription] = useState({
@@ -42,10 +47,16 @@ function App() {
 
   const handleAddPatient = (e) => {
     e.preventDefault()
-    const patientToAdd = { ...newPatient, id: Date.now().toString() }
+    const patientToAdd = { ...newPatient, id: Date.now().toString(), createdAt: new Date().toISOString() }
     setPatients([...patients, patientToAdd])
-    setNewPatient({ name: '', dob: '', phone: '', email: '', notes: '' })
+    setNewPatient({ 
+      name: '', dob: '', phone: '', email: '', notes: '',
+      sphereL: '0.00', cylinderL: '0.00', axisL: '0',
+      sphereR: '0.00', cylinderR: '0.00', axisR: '0',
+      add: '0.00', frameType: '', lensType: ''
+    })
     setShowPatientForm(false)
+    setActiveTab('patients')
   }
 
   const handleDeletePatient = (id) => {
@@ -57,7 +68,7 @@ function App() {
 
   const handleAddPrescription = (e) => {
     e.preventDefault()
-    const prescriptionToAdd = { ...newPrescription, id: Date.now().toString() }
+    const prescriptionToAdd = { ...newPrescription, id: Date.now().toString(), createdAt: new Date().toISOString() }
     setPrescriptions([...prescriptions, prescriptionToAdd])
     setNewPrescription({
       patientId: '',
@@ -76,27 +87,31 @@ function App() {
     }
   }
 
-  const getPatientName = (id) => patients.find(p => p.id === id)?.name || 'Unknown'
-
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col w-full max-w-none p-0 overflow-x-hidden">
       {/* Navbar */}
       <nav className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16 items-center">
-            <div className="flex items-center gap-2 cursor-pointer" onClick={() => setActiveTab('patients')}>
+            <div className="flex items-center gap-2 cursor-pointer" onClick={() => { setActiveTab('dashboard'); setViewingPatientId(null); setShowPatientForm(false); setShowPrescriptionForm(false); }}>
               <Clipboard className="text-blue-600 w-8 h-8" />
               <span className="text-xl font-bold text-gray-900 tracking-tight">OptiCare</span>
             </div>
             <div className="flex gap-2 sm:gap-4">
               <button
-                onClick={() => { setActiveTab('patients'); setViewingPatientId(null); }}
+                onClick={() => { setActiveTab('dashboard'); setViewingPatientId(null); setShowPatientForm(false); setShowPrescriptionForm(false); }}
+                className={`px-3 py-2 text-sm font-semibold rounded-lg transition-all ${activeTab === 'dashboard' ? 'text-blue-600 bg-blue-50' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'}`}
+              >
+                Dashboard
+              </button>
+              <button
+                onClick={() => { setActiveTab('patients'); setViewingPatientId(null); setShowPatientForm(false); setShowPrescriptionForm(false); }}
                 className={`px-3 py-2 text-sm font-semibold rounded-lg transition-all ${activeTab === 'patients' && !viewingPatientId ? 'text-blue-600 bg-blue-50' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'}`}
               >
                 Patients
               </button>
               <button
-                onClick={() => { setActiveTab('prescriptions'); setViewingPatientId(null); }}
+                onClick={() => { setActiveTab('prescriptions'); setViewingPatientId(null); setShowPatientForm(false); setShowPrescriptionForm(false); }}
                 className={`px-3 py-2 text-sm font-semibold rounded-lg transition-all ${activeTab === 'prescriptions' ? 'text-blue-600 bg-blue-50' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'}`}
               >
                 Prescriptions
@@ -109,110 +124,307 @@ function App() {
       {/* Main Content */}
       <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
 
+        {/* DASHBOARD VIEW */}
+        {activeTab === 'dashboard' && !showPatientForm && !showPrescriptionForm && !viewingPatientId && (
+          <div className="animate-in fade-in duration-300">
+            <div className="mb-8 text-center sm:text-left">
+              <h2 className="text-3xl font-extrabold text-gray-900 tracking-tight">Practice Dashboard</h2>
+              <p className="text-gray-500 mt-1">Practice summary and key indicators</p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-10">
+              <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-all">
+                <div className="flex items-center gap-4">
+                  <div className="bg-blue-50 p-3 rounded-xl text-blue-600">
+                    <User size={24} />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-500">Total Patients</p>
+                    <p className="text-2xl font-black text-gray-900">{patients.length}</p>
+                  </div>
+                </div>
+              </div>
+              <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-all">
+                <div className="flex items-center gap-4">
+                  <div className="bg-green-50 p-3 rounded-xl text-green-600">
+                    <FileText size={24} />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-500">Total Prescriptions</p>
+                    <p className="text-2xl font-black text-gray-900">{prescriptions.length}</p>
+                  </div>
+                </div>
+              </div>
+              <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-all">
+                <div className="flex items-center gap-4">
+                  <div className="bg-purple-50 p-3 rounded-xl text-purple-600">
+                    <PlusCircle size={24} />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-500">New Patients (MTD)</p>
+                    <p className="text-2xl font-black text-gray-900">
+                      {patients.filter(p => new Date(p.createdAt).getMonth() === new Date().getMonth()).length}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              {/* Quick Actions */}
+              <div className="space-y-6">
+                <h3 className="text-xl font-bold text-gray-900 px-1">Quick Actions</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <button
+                    onClick={() => { setShowPatientForm(true); setActiveTab('patients'); }}
+                    className="bg-white p-6 rounded-2xl border border-gray-200 hover:border-blue-300 hover:shadow-lg transition-all flex flex-col items-center text-center gap-4 group"
+                  >
+                    <div className="bg-blue-50 p-4 rounded-2xl text-blue-600 group-hover:scale-110 transition-transform">
+                      <UserPlus size={28} />
+                    </div>
+                    <span className="font-bold text-gray-800">Add New Patient</span>
+                  </button>
+                  <button
+                    onClick={() => { setShowPrescriptionForm(true); setActiveTab('prescriptions'); }}
+                    className="bg-white p-6 rounded-2xl border border-gray-200 hover:border-green-300 hover:shadow-lg transition-all flex flex-col items-center text-center gap-4 group"
+                  >
+                    <div className="bg-green-50 p-4 rounded-2xl text-green-600 group-hover:scale-110 transition-transform">
+                      <FileText size={28} />
+                    </div>
+                    <span className="font-bold text-gray-800">Issue Prescription</span>
+                  </button>
+                </div>
+
+                <div className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl p-8 text-white shadow-xl relative overflow-hidden">
+                  <div className="relative z-10">
+                    <h4 className="font-black text-2xl mb-2">Patient Records</h4>
+                    <p className="text-blue-100 mb-6">You have {patients.length} registered patients. Keep records updated for optimal clinical management.</p>
+                    <button
+                      onClick={() => setActiveTab('patients')}
+                      className="bg-white text-blue-600 px-6 py-2.5 rounded-xl font-bold transition-all hover:bg-blue-50 shadow-md"
+                    >
+                      Browse Database
+                    </button>
+                  </div>
+                  <Clipboard className="absolute -right-6 -bottom-6 w-40 h-40 opacity-10 rotate-12" />
+                </div>
+              </div>
+
+              {/* Recent Activity */}
+              <div className="space-y-6">
+                <h3 className="text-xl font-bold text-gray-900 px-1">Recent Enrollments</h3>
+                <div className="bg-white rounded-2xl border border-gray-200 divide-y shadow-sm overflow-hidden">
+                  {[...patients].sort((a,b) => b.id - a.id).slice(0, 5).map(p => (
+                    <div key={p.id} className="p-4 flex items-center justify-between hover:bg-gray-50 transition-colors cursor-pointer group" onClick={() => { setViewingPatientId(p.id); setActiveTab('patients'); }}>
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center text-blue-600 font-bold text-lg shadow-inner">
+                          {p.name.charAt(0)}
+                        </div>
+                        <div>
+                          <p className="font-bold text-gray-900 group-hover:text-blue-600 transition-colors">{p.name}</p>
+                          <p className="text-xs text-gray-500 font-medium">{new Date(p.createdAt).toLocaleDateString()} • {p.phone}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 text-gray-300 group-hover:text-blue-500 transition-colors">
+                         <span className="text-xs font-bold uppercase tracking-widest hidden sm:inline">Profile</span>
+                         <ArrowLeft className="rotate-180" size={16} />
+                      </div>
+                    </div>
+                  ))}
+                  {patients.length === 0 && (
+                    <div className="p-12 text-center text-gray-400 italic">
+                      No patient records found.
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* PATIENT DETAIL VIEW */}
         {viewingPatientId && (
           <div className="animate-in fade-in duration-300">
             <button
               onClick={() => setViewingPatientId(null)}
-              className="flex items-center gap-2 text-gray-500 hover:text-gray-700 mb-6 transition-colors font-medium"
+              className="flex items-center gap-2 text-gray-500 hover:text-gray-700 mb-6 transition-colors font-medium group"
             >
-              <ArrowLeft size={18} />
-              Back to List
+              <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
+              Back to Patients List
             </button>
             {(() => {
               const p = patients.find(p => p.id === viewingPatientId);
               const pPresc = prescriptions.filter(pr => pr.patientId === viewingPatientId);
-              if (!p) return <div>Patient not found.</div>;
+              if (!p) return <div className="p-20 text-center text-gray-500">Patient not found.</div>;
               return (
                 <div className="space-y-8">
-                  <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 flex flex-col md:flex-row justify-between gap-8">
+                  <div className="bg-white rounded-3xl shadow-sm border border-gray-200 p-8 flex flex-col md:flex-row justify-between gap-8">
                     <div className="flex gap-6 items-center">
-                      <div className="w-20 h-20 bg-blue-100 rounded-2xl flex items-center justify-center text-blue-600 font-bold text-3xl shadow-inner">
+                      <div className="w-24 h-24 bg-blue-100 rounded-2xl flex items-center justify-center text-blue-600 font-bold text-4xl shadow-inner border border-blue-200">
                         {p.name.charAt(0).toUpperCase()}
                       </div>
                       <div>
-                        <h2 className="text-3xl font-black text-gray-900">{p.name}</h2>
-                        <div className="flex flex-wrap gap-4 mt-2 text-sm text-gray-500 font-medium">
-                          <span className="flex items-center gap-1.5"><Calendar size={14} /> DOB: {p.dob}</span>
-                          <span className="flex items-center gap-1.5"><Phone size={14} /> {p.phone}</span>
-                          {p.email && <span className="flex items-center gap-1.5"><Mail size={14} /> {p.email}</span>}
+                        <h2 className="text-3xl font-black text-gray-900 tracking-tight">{p.name}</h2>
+                        <div className="flex flex-wrap gap-4 mt-3 text-sm text-gray-500 font-medium">
+                          <span className="flex items-center gap-1.5"><Calendar size={14} className="text-blue-500" /> DOB: {p.dob}</span>
+                          <span className="flex items-center gap-1.5"><Phone size={14} className="text-blue-500" /> {p.phone}</span>
+                          {p.email && <span className="flex items-center gap-1.5"><Mail size={14} className="text-blue-500" /> {p.email}</span>}
+                        </div>
+                        <div className="flex flex-wrap gap-3 mt-4">
+                          {p.frameType && <span className="bg-orange-50 text-orange-700 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border border-orange-100">Frame: {p.frameType}</span>}
+                          {p.lensType && <span className="bg-indigo-50 text-indigo-700 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border border-indigo-100">Lens: {p.lensType}</span>}
                         </div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center">
                       <button
                         onClick={() => {
                           setNewPrescription({...newPrescription, patientId: p.id});
                           setShowPrescriptionForm(true);
                           setViewingPatientId(null);
+                          setActiveTab('prescriptions');
                         }}
-                        className="bg-blue-600 text-white px-5 py-2.5 rounded-xl font-bold hover:bg-blue-700 transition-all shadow-md active:scale-95 flex items-center gap-2"
+                        className="w-full md:w-auto bg-blue-600 text-white px-6 py-3 rounded-2xl font-bold hover:bg-blue-700 transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2"
                       >
-                        <PlusCircle size={18} /> New Prescription
+                        <PlusCircle size={20} /> New Prescription
                       </button>
                     </div>
                   </div>
 
-                  <div>
-                    <h3 className="text-xl font-black text-gray-900 mb-6">Prescription History ({pPresc.length})</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div className="bg-white rounded-3xl shadow-sm border border-gray-200 p-8">
+                      <h3 className="text-xl font-black text-gray-900 mb-6 flex items-center gap-2">
+                         <FileText size={20} className="text-blue-600" />
+                         Initial Refraction
+                      </h3>
+                      <div className="grid grid-cols-1 gap-6">
+                        <div className="bg-blue-50/50 rounded-2xl p-5 border border-blue-100/50">
+                          <h4 className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-4">Left Eye (OS)</h4>
+                          <div className="grid grid-cols-3 gap-3">
+                            <div className="bg-white p-3 rounded-xl shadow-sm text-center">
+                              <p className="text-[8px] font-bold text-gray-400 uppercase mb-1">Sph</p>
+                              <p className="font-mono font-black text-gray-700">{p.sphereL}</p>
+                            </div>
+                            <div className="bg-white p-3 rounded-xl shadow-sm text-center">
+                              <p className="text-[8px] font-bold text-gray-400 uppercase mb-1">Cyl</p>
+                              <p className="font-mono font-black text-gray-700">{p.cylinderL}</p>
+                            </div>
+                            <div className="bg-white p-3 rounded-xl shadow-sm text-center">
+                              <p className="text-[8px] font-bold text-gray-400 uppercase mb-1">Axis</p>
+                              <p className="font-mono font-black text-gray-700">{p.axisL}°</p>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="bg-blue-50/50 rounded-2xl p-5 border border-blue-100/50">
+                          <h4 className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-4">Right Eye (OD)</h4>
+                          <div className="grid grid-cols-3 gap-3">
+                            <div className="bg-white p-3 rounded-xl shadow-sm text-center">
+                              <p className="text-[8px] font-bold text-gray-400 uppercase mb-1">Sph</p>
+                              <p className="font-mono font-black text-gray-700">{p.sphereR}</p>
+                            </div>
+                            <div className="bg-white p-3 rounded-xl shadow-sm text-center">
+                              <p className="text-[8px] font-bold text-gray-400 uppercase mb-1">Cyl</p>
+                              <p className="font-mono font-black text-gray-700">{p.cylinderR}</p>
+                            </div>
+                            <div className="bg-white p-3 rounded-xl shadow-sm text-center">
+                              <p className="text-[8px] font-bold text-gray-400 uppercase mb-1">Axis</p>
+                              <p className="font-mono font-black text-gray-700">{p.axisR}°</p>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex justify-between items-center px-4 py-2 bg-gray-50 rounded-xl">
+                          <span className="text-xs font-black text-gray-400 uppercase tracking-widest">Addition Power</span>
+                          <span className="font-mono font-black text-blue-600 text-lg">+{p.add}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="bg-white rounded-3xl shadow-sm border border-gray-200 p-8">
+                      <h3 className="text-xl font-black text-gray-900 mb-6 flex items-center gap-2">
+                         <User size={20} className="text-blue-600" />
+                         Clinical Notes
+                      </h3>
+                      <div className="bg-gray-50 rounded-2xl p-6 border border-gray-100 min-h-[120px]">
+                        <p className="text-gray-600 italic leading-relaxed">"{p.notes || 'No clinical notes recorded for this patient.'}"</p>
+                      </div>
+                      <div className="mt-8 pt-8 border-t border-gray-100 space-y-4">
+                         <div className="flex justify-between items-center">
+                            <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Frame Preference</span>
+                            <span className="text-sm font-bold text-gray-700 bg-gray-100 px-3 py-1 rounded-lg">{p.frameType || 'Not specified'}</span>
+                         </div>
+                         <div className="flex justify-between items-center">
+                            <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Lens Preference</span>
+                            <span className="text-sm font-bold text-gray-700 bg-gray-100 px-3 py-1 rounded-lg">{p.lensType || 'Not specified'}</span>
+                         </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="pt-4">
+                    <h3 className="text-xl font-black text-gray-900 mb-6 px-1">Prescription History ({pPresc.length})</h3>
                     <div className="space-y-6">
                       {pPresc.length > 0 ? (
                         pPresc.map(presc => (
-                          <div key={presc.id} className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 sm:p-8">
+                          <div key={presc.id} className="bg-white rounded-3xl shadow-sm border border-gray-200 p-6 sm:p-8 hover:shadow-md transition-all group">
                             <div className="flex justify-between items-start mb-6">
-                              <p className="text-sm text-gray-500 flex items-center gap-2 mt-1">
-                                <Calendar size={14} /> Issued on {presc.date}
+                              <p className="text-sm text-gray-500 font-bold flex items-center gap-2">
+                                <Calendar size={16} className="text-blue-500" /> Issued on {new Date(presc.date).toLocaleDateString()}
                               </p>
-                              <button onClick={() => handleDeletePrescription(presc.id)} className="text-red-500 hover:text-red-700 p-1"><Trash2 size={18} /></button>
+                              <button onClick={() => handleDeletePrescription(presc.id)} className="text-red-300 hover:text-red-500 p-2 hover:bg-red-50 rounded-xl transition-all"><Trash2 size={18} /></button>
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-6">
-                               <div className="bg-blue-50/50 rounded-xl p-4 border border-blue-100/50">
-                                 <h4 className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-3">Left Eye (OS)</h4>
-                                 <div className="grid grid-cols-3 gap-2">
-                                    <div className="bg-white p-2 rounded shadow-sm text-center">
-                                      <p className="text-[8px] text-gray-400 uppercase">Sph</p>
-                                      <p className="font-mono font-bold text-gray-700">{presc.sphereL}</p>
+                               <div className="bg-gray-50 rounded-2xl p-5 border border-gray-100">
+                                 <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">Left Eye (OS)</h4>
+                                 <div className="grid grid-cols-3 gap-3">
+                                    <div className="bg-white p-3 rounded-xl shadow-sm text-center">
+                                      <p className="text-[8px] font-bold text-gray-400 uppercase mb-1">Sph</p>
+                                      <p className="font-mono font-black text-gray-700">{presc.sphereL}</p>
                                     </div>
-                                    <div className="bg-white p-2 rounded shadow-sm text-center">
-                                      <p className="text-[8px] text-gray-400 uppercase">Cyl</p>
-                                      <p className="font-mono font-bold text-gray-700">{presc.cylinderL}</p>
+                                    <div className="bg-white p-3 rounded-xl shadow-sm text-center">
+                                      <p className="text-[8px] font-bold text-gray-400 uppercase mb-1">Cyl</p>
+                                      <p className="font-mono font-black text-gray-700">{presc.cylinderL}</p>
                                     </div>
-                                    <div className="bg-white p-2 rounded shadow-sm text-center">
-                                      <p className="text-[8px] text-gray-400 uppercase">Axis</p>
-                                      <p className="font-mono font-bold text-gray-700">{presc.axisL}°</p>
+                                    <div className="bg-white p-3 rounded-xl shadow-sm text-center">
+                                      <p className="text-[8px] font-bold text-gray-400 uppercase mb-1">Axis</p>
+                                      <p className="font-mono font-black text-gray-700">{presc.axisL}°</p>
                                     </div>
                                  </div>
                                </div>
-                               <div className="bg-blue-50/50 rounded-xl p-4 border border-blue-100/50">
-                                 <h4 className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-3">Right Eye (OD)</h4>
-                                 <div className="grid grid-cols-3 gap-2">
-                                    <div className="bg-white p-2 rounded shadow-sm text-center">
-                                      <p className="text-[8px] text-gray-400 uppercase">Sph</p>
-                                      <p className="font-mono font-bold text-gray-700">{presc.sphereR}</p>
+                               <div className="bg-gray-50 rounded-2xl p-5 border border-gray-100">
+                                 <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">Right Eye (OD)</h4>
+                                 <div className="grid grid-cols-3 gap-3">
+                                    <div className="bg-white p-3 rounded-xl shadow-sm text-center">
+                                      <p className="text-[8px] font-bold text-gray-400 uppercase mb-1">Sph</p>
+                                      <p className="font-mono font-black text-gray-700">{presc.sphereR}</p>
                                     </div>
-                                    <div className="bg-white p-2 rounded shadow-sm text-center">
-                                      <p className="text-[8px] text-gray-400 uppercase">Cyl</p>
-                                      <p className="font-mono font-bold text-gray-700">{presc.cylinderR}</p>
+                                    <div className="bg-white p-3 rounded-xl shadow-sm text-center">
+                                      <p className="text-[8px] font-bold text-gray-400 uppercase mb-1">Cyl</p>
+                                      <p className="font-mono font-black text-gray-700">{presc.cylinderR}</p>
                                     </div>
-                                    <div className="bg-white p-2 rounded shadow-sm text-center">
-                                      <p className="text-[8px] text-gray-400 uppercase">Axis</p>
-                                      <p className="font-mono font-bold text-gray-700">{presc.axisR}°</p>
+                                    <div className="bg-white p-3 rounded-xl shadow-sm text-center">
+                                      <p className="text-[8px] font-bold text-gray-400 uppercase mb-1">Axis</p>
+                                      <p className="font-mono font-black text-gray-700">{presc.axisR}°</p>
                                     </div>
                                  </div>
                                </div>
                             </div>
-                            <div className="flex justify-between items-end border-t border-gray-50 pt-4">
-                              <div>
-                                <p className="text-[10px] text-gray-400 uppercase mb-1">ADD</p>
-                                <p className="font-mono font-black text-blue-600">+{presc.add}</p>
+                            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end border-t border-gray-100 pt-6 gap-4">
+                              <div className="bg-blue-50 px-4 py-2 rounded-xl">
+                                <p className="text-[8px] font-black text-blue-400 uppercase tracking-widest mb-1">Add Power</p>
+                                <p className="font-mono font-black text-blue-600 text-lg">+{presc.add}</p>
                               </div>
-                              {presc.notes && <p className="text-sm text-gray-500 italic max-w-md text-right">"{presc.notes}"</p>}
+                              {presc.notes && (
+                                <div className="flex-1 max-w-md text-left sm:text-right">
+                                  <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1">Dispensing Notes</p>
+                                  <p className="text-sm text-gray-600 italic">"{presc.notes}"</p>
+                                </div>
+                              )}
                             </div>
                           </div>
                         ))
                       ) : (
-                        <div className="py-12 bg-white rounded-2xl border border-dashed border-gray-200 text-center text-gray-400">
-                           No prescriptions for this patient.
+                        <div className="py-16 bg-white rounded-3xl border border-dashed border-gray-200 text-center text-gray-400 italic">
+                           No prescription records found for this patient.
                         </div>
                       )}
                     </div>
@@ -224,16 +436,16 @@ function App() {
         )}
 
         {/* PATIENTS TAB */}
-        {activeTab === 'patients' && !showPatientForm && !viewingPatientId && (
+        {activeTab === 'patients' && !showPatientForm && !showPrescriptionForm && !viewingPatientId && (
           <div className="animate-in fade-in duration-300">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
               <div>
-                <h2 className="text-3xl font-extrabold text-gray-900">Patient Database</h2>
+                <h2 className="text-3xl font-extrabold text-gray-900 tracking-tight">Patient Database</h2>
                 <p className="text-gray-500 mt-1">Manage patient records and clinical history</p>
               </div>
               <button 
                 onClick={() => setShowPatientForm(true)}
-                className="flex items-center gap-2 bg-blue-600 text-white px-5 py-2.5 rounded-xl font-bold hover:bg-blue-700 transition-all shadow-md active:scale-95"
+                className="w-full sm:w-auto flex items-center justify-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-2xl font-bold hover:bg-blue-700 transition-all shadow-lg active:scale-95"
               >
                 <UserPlus size={20} strokeWidth={2.5} />
                 New Patient
@@ -244,7 +456,7 @@ function App() {
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-blue-500 transition-colors" size={20} />
               <input 
                 type="text" 
-                placeholder="Search by name or phone..." 
+                placeholder="Search by name, phone or ID..." 
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-12 pr-4 py-4 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all bg-white shadow-sm text-lg"
@@ -254,64 +466,60 @@ function App() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredPatients.length > 0 ? (
                 filteredPatients.map(patient => (
-                  <div key={patient.id} onClick={() => setViewingPatientId(patient.id)} className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-all group cursor-pointer active:scale-[0.98]">
-                    <div className="flex justify-between items-start mb-4">
-                      <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold text-xl">
+                  <div key={patient.id} onClick={() => setViewingPatientId(patient.id)} className="bg-white rounded-3xl shadow-sm border border-gray-200 p-6 hover:shadow-xl hover:border-blue-100 transition-all group cursor-pointer active:scale-[0.98]">
+                    <div className="flex justify-between items-start mb-6">
+                      <div className="w-14 h-14 bg-blue-100 rounded-2xl flex items-center justify-center text-blue-600 font-bold text-2xl shadow-inner border border-blue-50">
                         {patient.name.charAt(0).toUpperCase()}
                       </div>
-                      <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
                             setNewPrescription({...newPrescription, patientId: patient.id});
                             setShowPrescriptionForm(true);
+                            setActiveTab('prescriptions');
                           }}
-                          title="Add Prescription"
-                          className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                          title="New Prescription"
+                          className="p-2.5 text-green-600 hover:bg-green-50 rounded-xl transition-all"
                         >
-                          <PlusCircle size={18} />
+                          <PlusCircle size={20} />
                         </button>
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
                             handleDeletePatient(patient.id);
                           }}
-                          title="Delete Patient"
-                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          title="Delete Record"
+                          className="p-2.5 text-red-400 hover:bg-red-50 rounded-xl transition-all"
                         >
-                          <Trash2 size={18} />
+                          <Trash2 size={20} />
                         </button>
                       </div>
                     </div>
-                    <h3 className="text-xl font-bold text-gray-900 mb-1">{patient.name}</h3>
-                    <div className="space-y-2 text-sm text-gray-600">
+                    <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">{patient.name}</h3>
+                    <div className="space-y-2.5 text-sm text-gray-500 font-medium">
                       <div className="flex items-center gap-2">
-                        <Calendar size={14} className="text-gray-400" />
+                        <Calendar size={14} className="text-blue-400" />
                         <span>DOB: {patient.dob}</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <Phone size={14} className="text-gray-400" />
+                        <Phone size={14} className="text-blue-400" />
                         <span>{patient.phone}</span>
                       </div>
-                      {patient.email && (
-                        <div className="flex items-center gap-2">
-                          <Mail size={14} className="text-gray-400" />
-                          <span className="truncate">{patient.email}</span>
-                        </div>
-                      )}
-                    </div>
-                    {patient.notes && (
-                      <div className="mt-4 pt-4 border-t border-gray-50">
-                        <p className="text-sm text-gray-500 italic line-clamp-2">"{patient.notes}"</p>
+                      <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-gray-50">
+                          {patient.frameType && <span className="bg-orange-50 text-orange-600 px-2 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-widest border border-orange-100">Frame: {patient.frameType}</span>}
+                          {patient.lensType && <span className="bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-widest border border-indigo-100">Lens: {patient.lensType}</span>}
                       </div>
-                    )}
+                    </div>
                   </div>
                 ))
               ) : (
-                <div className="col-span-full py-20 bg-white rounded-2xl border border-dashed border-gray-300 flex flex-col items-center justify-center text-gray-400">
-                   <User className="w-12 h-12 mb-4 opacity-20" />
-                   <p className="text-lg font-medium">No patient records found</p>
-                   {searchTerm && <p className="text-sm">Try clearing your search query</p>}
+                <div className="col-span-full py-24 bg-white rounded-3xl border border-dashed border-gray-300 flex flex-col items-center justify-center text-gray-400">
+                   <div className="bg-gray-50 p-6 rounded-full mb-4">
+                     <User className="w-12 h-12 opacity-20" />
+                   </div>
+                   <p className="text-xl font-bold text-gray-900 mb-1">No patient records found</p>
+                   <p className="text-sm">Start by adding your first patient to the database</p>
                 </div>
               )}
             </div>
@@ -320,77 +528,173 @@ function App() {
 
         {/* PATIENT FORM */}
         {showPatientForm && (
-          <div className="max-w-2xl mx-auto animate-in slide-in-from-bottom-4 duration-300">
+          <div className="max-w-3xl mx-auto animate-in slide-in-from-bottom-6 duration-500">
             <button 
               onClick={() => setShowPatientForm(false)}
-              className="flex items-center gap-2 text-gray-500 hover:text-gray-700 mb-6 transition-colors font-medium"
+              className="flex items-center gap-2 text-gray-500 hover:text-gray-900 mb-8 transition-colors font-bold group"
             >
-              <ArrowLeft size={18} />
-              Back to Patients
+              <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
+              Back to Database
             </button>
-            <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-8">
-              <h2 className="text-2xl font-extrabold text-gray-900 mb-8">Add New Patient</h2>
-              <form onSubmit={handleAddPatient} className="space-y-6">
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">Full Name *</label>
-                  <input 
-                    required
-                    type="text" 
-                    value={newPatient.name}
-                    onChange={e => setNewPatient({...newPatient, name: e.target.value})}
-                    placeholder="e.g. John Doe"
-                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
-                  />
+            <div className="bg-white rounded-[2rem] shadow-2xl border border-gray-100 p-8 sm:p-12">
+              <div className="mb-10">
+                <h2 className="text-3xl font-black text-gray-900 tracking-tight">Add New Patient</h2>
+                <p className="text-gray-500 mt-2">Complete all required fields to create a clinical record</p>
+              </div>
+
+              <form onSubmit={handleAddPatient} className="space-y-10">
+                <div className="space-y-6">
+                  <h3 className="text-sm font-black text-blue-600 uppercase tracking-widest flex items-center gap-2">
+                    <User size={16} /> Personal Information
+                  </h3>
+                  <div className="grid grid-cols-1 gap-6">
+                    <div>
+                      <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2">Full Name *</label>
+                      <input 
+                        required
+                        type="text" 
+                        value={newPatient.name}
+                        onChange={e => setNewPatient({...newPatient, name: e.target.value})}
+                        placeholder="e.g. John Alexander Doe"
+                        className="w-full px-5 py-4 border border-gray-200 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all bg-gray-50/50"
+                      />
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                      <div>
+                        <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2">Date of Birth *</label>
+                        <input 
+                          required
+                          type="date" 
+                          value={newPatient.dob}
+                          onChange={e => setNewPatient({...newPatient, dob: e.target.value})}
+                          className="w-full px-5 py-4 border border-gray-200 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all bg-gray-50/50"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2">Phone Number *</label>
+                        <input 
+                          required
+                          type="tel" 
+                          value={newPatient.phone}
+                          onChange={e => setNewPatient({...newPatient, phone: e.target.value})}
+                          placeholder="e.g. +1 (555) 000-0000"
+                          className="w-full px-5 py-4 border border-gray-200 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all bg-gray-50/50"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2">Email Address</label>
+                      <input 
+                        type="email" 
+                        value={newPatient.email}
+                        onChange={e => setNewPatient({...newPatient, email: e.target.value})}
+                        placeholder="john.doe@clinical.com"
+                        className="w-full px-5 py-4 border border-gray-200 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all bg-gray-50/50"
+                      />
+                    </div>
+                  </div>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-2">Date of Birth *</label>
-                    <input 
-                      required
-                      type="date" 
-                      value={newPatient.dob}
-                      onChange={e => setNewPatient({...newPatient, dob: e.target.value})}
-                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
-                    />
+
+                <div className="space-y-6 pt-10 border-t border-gray-100">
+                  <h3 className="text-sm font-black text-blue-600 uppercase tracking-widest flex items-center gap-2">
+                    <FileText size={16} /> Initial Eye Measures (Refraction)
+                  </h3>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                    {/* Left Eye */}
+                    <div className="space-y-5">
+                      <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest">Left Eye (OS)</h4>
+                      <div className="grid grid-cols-3 gap-4">
+                        <div>
+                          <label className="block text-[10px] font-black text-gray-500 mb-1 uppercase">SPH</label>
+                          <input type="text" value={newPatient.sphereL} onChange={e => setNewPatient({...newPatient, sphereL: e.target.value})} className="w-full px-3 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-mono text-center shadow-inner" />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-black text-gray-500 mb-1 uppercase">CYL</label>
+                          <input type="text" value={newPatient.cylinderL} onChange={e => setNewPatient({...newPatient, cylinderL: e.target.value})} className="w-full px-3 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-mono text-center shadow-inner" />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-black text-gray-500 mb-1 uppercase">AXIS</label>
+                          <input type="text" value={newPatient.axisL} onChange={e => setNewPatient({...newPatient, axisL: e.target.value})} className="w-full px-3 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-mono text-center shadow-inner" />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Right Eye */}
+                    <div className="space-y-5">
+                      <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest">Right Eye (OD)</h4>
+                      <div className="grid grid-cols-3 gap-4">
+                        <div>
+                          <label className="block text-[10px] font-black text-gray-500 mb-1 uppercase">SPH</label>
+                          <input type="text" value={newPatient.sphereR} onChange={e => setNewPatient({...newPatient, sphereR: e.target.value})} className="w-full px-3 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-mono text-center shadow-inner" />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-black text-gray-500 mb-1 uppercase">CYL</label>
+                          <input type="text" value={newPatient.cylinderR} onChange={e => setNewPatient({...newPatient, cylinderR: e.target.value})} className="w-full px-3 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-mono text-center shadow-inner" />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-black text-gray-500 mb-1 uppercase">AXIS</label>
+                          <input type="text" value={newPatient.axisR} onChange={e => setNewPatient({...newPatient, axisR: e.target.value})} className="w-full px-3 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-mono text-center shadow-inner" />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2">Addition Power (ADD)</label>
+                      <input type="text" value={newPatient.add} onChange={e => setNewPatient({...newPatient, add: e.target.value})} className="w-full px-5 py-4 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none font-mono shadow-inner" placeholder="+0.00" />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-6 pt-10 border-t border-gray-100">
+                  <h3 className="text-sm font-black text-blue-600 uppercase tracking-widest flex items-center gap-2">
+                    <Clipboard size={16} /> Dispensing Preferences
+                  </h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2">Frame Type / Material</label>
+                      <input 
+                        type="text" 
+                        value={newPatient.frameType}
+                        onChange={e => setNewPatient({...newPatient, frameType: e.target.value})}
+                        placeholder="e.g. Titanium Rimless"
+                        className="w-full px-5 py-4 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all bg-gray-50/50"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2">Lens Type / Coating</label>
+                      <input 
+                        type="text" 
+                        value={newPatient.lensType}
+                        onChange={e => setNewPatient({...newPatient, lensType: e.target.value})}
+                        placeholder="e.g. Progressive Blue-Cut"
+                        className="w-full px-5 py-4 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all bg-gray-50/50"
+                      />
+                    </div>
                   </div>
                   <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-2">Phone Number *</label>
-                    <input 
-                      required
-                      type="tel" 
-                      value={newPatient.phone}
-                      onChange={e => setNewPatient({...newPatient, phone: e.target.value})}
-                      placeholder="e.g. +1 (555) 000-0000"
-                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+                    <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2">Clinical Notes & Observations</label>
+                    <textarea 
+                      rows={4}
+                      value={newPatient.notes}
+                      onChange={e => setNewPatient({...newPatient, notes: e.target.value})}
+                      placeholder="Enter any specific clinical observations, previous history or allergies..."
+                      className="w-full px-5 py-4 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all bg-gray-50/50 resize-none"
                     />
                   </div>
                 </div>
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">Email Address</label>
-                  <input 
-                    type="email" 
-                    value={newPatient.email}
-                    onChange={e => setNewPatient({...newPatient, email: e.target.value})}
-                    placeholder="john@example.com"
-                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
-                  />
+
+                <div className="pt-6">
+                  <button 
+                    type="submit"
+                    className="w-full bg-blue-600 text-white py-5 rounded-[2rem] font-black text-xl hover:bg-blue-700 transition-all shadow-xl hover:shadow-blue-500/20 active:scale-[0.98]"
+                  >
+                    Register Patient Record
+                  </button>
+                  <p className="text-center text-gray-400 text-xs mt-6 uppercase tracking-widest font-bold">Confidential Medical Record</p>
                 </div>
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">Clinical Notes</label>
-                  <textarea 
-                    rows={3}
-                    value={newPatient.notes}
-                    onChange={e => setNewPatient({...newPatient, notes: e.target.value})}
-                    placeholder="Allergies, previous conditions, etc."
-                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none resize-none"
-                  />
-                </div>
-                <button 
-                  type="submit"
-                  className="w-full bg-blue-600 text-white py-4 rounded-xl font-bold text-lg hover:bg-blue-700 transition-all shadow-lg active:scale-[0.98]"
-                >
-                  Create Patient Record
-                </button>
               </form>
             </div>
           </div>
@@ -401,13 +705,13 @@ function App() {
           <div className="animate-in fade-in duration-300">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
               <div>
-                <h2 className="text-3xl font-extrabold text-gray-900">Prescription Records</h2>
+                <h2 className="text-3xl font-extrabold text-gray-900 tracking-tight">Prescription Records</h2>
                 <p className="text-gray-500 mt-1">Review and manage clinical prescriptions</p>
               </div>
               <button 
                 onClick={() => setShowPrescriptionForm(true)}
                 disabled={patients.length === 0}
-                className="flex items-center gap-2 bg-blue-600 text-white px-5 py-2.5 rounded-xl font-bold hover:bg-blue-700 transition-all shadow-md active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full sm:w-auto flex items-center justify-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-2xl font-bold hover:bg-blue-700 transition-all shadow-lg active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <PlusCircle size={20} strokeWidth={2.5} />
                 New Prescription
@@ -417,69 +721,69 @@ function App() {
             <div className="space-y-6">
               {filteredPrescriptions.length > 0 ? (
                 filteredPrescriptions.map(presc => (
-                  <div key={presc.id} className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden group">
-                    <div className="p-6 sm:p-8">
-                      <div className="flex justify-between items-start mb-6">
+                  <div key={presc.id} className="bg-white rounded-3xl shadow-sm border border-gray-200 overflow-hidden group hover:shadow-md transition-all">
+                    <div className="p-6 sm:p-10">
+                      <div className="flex flex-col sm:flex-row justify-between items-start gap-6 mb-8">
                         <div>
-                          <h3 className="text-xl font-black text-gray-900">{presc.patient?.name}</h3>
-                          <p className="text-sm text-gray-500 flex items-center gap-2 mt-1">
-                            <Calendar size={14} /> Issued on {presc.date}
+                          <h3 className="text-2xl font-black text-gray-900 group-hover:text-blue-600 transition-colors">{presc.patient?.name}</h3>
+                          <p className="text-sm text-gray-500 flex items-center gap-2 mt-2 font-bold uppercase tracking-widest">
+                            <Calendar size={14} className="text-blue-500" /> Issued on {new Date(presc.date).toLocaleDateString()}
                           </p>
                         </div>
                         <button 
                           onClick={() => handleDeletePrescription(presc.id)}
-                          className="p-2 text-red-500 hover:bg-red-50 rounded-lg opacity-0 group-hover:opacity-100 transition-all"
+                          className="p-3 text-red-300 hover:text-red-500 hover:bg-red-50 rounded-2xl opacity-0 group-hover:opacity-100 transition-all"
                         >
-                          <Trash2 size={20} />
+                          <Trash2 size={24} />
                         </button>
                       </div>
 
                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-                        <div className="bg-gray-50 rounded-xl p-5 border border-gray-100">
-                          <h4 className="text-sm font-black text-gray-400 uppercase tracking-widest mb-4">Left Eye (OS)</h4>
+                        <div className="bg-gray-50 rounded-[2rem] p-6 border border-gray-100">
+                          <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-5">Left Eye (OS)</h4>
                           <div className="grid grid-cols-3 gap-4">
-                            <div>
-                              <p className="text-[10px] font-bold text-gray-400 mb-1 uppercase">Sphere</p>
-                              <p className="text-xl font-mono font-bold text-gray-800">{presc.sphereL}</p>
+                            <div className="bg-white p-4 rounded-2xl shadow-sm text-center">
+                              <p className="text-[8px] font-black text-gray-400 uppercase mb-2">Sphere</p>
+                              <p className="text-xl font-mono font-black text-gray-800">{presc.sphereL}</p>
                             </div>
-                            <div>
-                              <p className="text-[10px] font-bold text-gray-400 mb-1 uppercase">Cylinder</p>
-                              <p className="text-xl font-mono font-bold text-gray-800">{presc.cylinderL}</p>
+                            <div className="bg-white p-4 rounded-2xl shadow-sm text-center">
+                              <p className="text-[8px] font-black text-gray-400 uppercase mb-2">Cylinder</p>
+                              <p className="text-xl font-mono font-black text-gray-800">{presc.cylinderL}</p>
                             </div>
-                            <div>
-                              <p className="text-[10px] font-bold text-gray-400 mb-1 uppercase">Axis</p>
-                              <p className="text-xl font-mono font-bold text-gray-800">{presc.axisL}°</p>
+                            <div className="bg-white p-4 rounded-2xl shadow-sm text-center">
+                              <p className="text-[8px] font-black text-gray-400 uppercase mb-2">Axis</p>
+                              <p className="text-xl font-mono font-black text-gray-800">{presc.axisL}°</p>
                             </div>
                           </div>
                         </div>
-                        <div className="bg-gray-50 rounded-xl p-5 border border-gray-100">
-                          <h4 className="text-sm font-black text-gray-400 uppercase tracking-widest mb-4">Right Eye (OD)</h4>
+                        <div className="bg-gray-50 rounded-[2rem] p-6 border border-gray-100">
+                          <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-5">Right Eye (OD)</h4>
                           <div className="grid grid-cols-3 gap-4">
-                            <div>
-                              <p className="text-[10px] font-bold text-gray-400 mb-1 uppercase">Sphere</p>
-                              <p className="text-xl font-mono font-bold text-gray-800">{presc.sphereR}</p>
+                            <div className="bg-white p-4 rounded-2xl shadow-sm text-center">
+                              <p className="text-[8px] font-black text-gray-400 uppercase mb-2">Sphere</p>
+                              <p className="text-xl font-mono font-black text-gray-800">{presc.sphereR}</p>
                             </div>
-                            <div>
-                              <p className="text-[10px] font-bold text-gray-400 mb-1 uppercase">Cylinder</p>
-                              <p className="text-xl font-mono font-bold text-gray-800">{presc.cylinderR}</p>
+                            <div className="bg-white p-4 rounded-2xl shadow-sm text-center">
+                              <p className="text-[8px] font-black text-gray-400 uppercase mb-2">Cylinder</p>
+                              <p className="text-xl font-mono font-black text-gray-800">{presc.cylinderR}</p>
                             </div>
-                            <div>
-                              <p className="text-[10px] font-bold text-gray-400 mb-1 uppercase">Axis</p>
-                              <p className="text-xl font-mono font-bold text-gray-800">{presc.axisR}°</p>
+                            <div className="bg-white p-4 rounded-2xl shadow-sm text-center">
+                              <p className="text-[8px] font-black text-gray-400 uppercase mb-2">Axis</p>
+                              <p className="text-xl font-mono font-black text-gray-800">{presc.axisR}°</p>
                             </div>
                           </div>
                         </div>
                       </div>
 
-                      <div className="flex flex-col sm:flex-row gap-8 items-start sm:items-center pt-6 border-t border-gray-100">
-                        <div>
-                          <p className="text-[10px] font-bold text-gray-400 mb-1 uppercase">ADD Power</p>
-                          <p className="text-xl font-mono font-bold text-blue-600">+{presc.add}</p>
+                      <div className="flex flex-col sm:flex-row gap-10 items-start sm:items-center pt-8 border-t border-gray-100">
+                        <div className="bg-blue-50 px-6 py-4 rounded-2xl">
+                          <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-1">Add Power</p>
+                          <p className="text-2xl font-mono font-black text-blue-600">+{presc.add}</p>
                         </div>
                         {presc.notes && (
                           <div className="flex-1">
-                            <p className="text-[10px] font-bold text-gray-400 mb-1 uppercase">Special Instructions</p>
-                            <p className="text-sm text-gray-600">{presc.notes}</p>
+                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Special Dispensing Instructions</p>
+                            <p className="text-gray-600 italic leading-relaxed">"{presc.notes}"</p>
                           </div>
                         )}
                       </div>
@@ -487,10 +791,10 @@ function App() {
                   </div>
                 ))
               ) : (
-                <div className="py-20 bg-white rounded-2xl border border-dashed border-gray-300 flex flex-col items-center justify-center text-gray-400">
-                   <FileText className="w-12 h-12 mb-4 opacity-20" />
-                   <p className="text-lg font-medium">No prescriptions recorded</p>
-                   {patients.length === 0 && <p className="text-sm">Register a patient first to create prescriptions</p>}
+                <div className="py-24 bg-white rounded-3xl border border-dashed border-gray-300 flex flex-col items-center justify-center text-gray-400 italic">
+                   <FileText className="w-16 h-16 mb-4 opacity-10" />
+                   <p className="text-xl font-bold text-gray-900 mb-1">No prescriptions recorded yet</p>
+                   {patients.length === 0 && <p className="text-sm">Register a patient first to start creating prescriptions</p>}
                 </div>
               )}
             </div>
@@ -499,113 +803,128 @@ function App() {
 
         {/* PRESCRIPTION FORM */}
         {showPrescriptionForm && (
-          <div className="max-w-3xl mx-auto animate-in slide-in-from-bottom-4 duration-300">
+          <div className="max-w-4xl mx-auto animate-in slide-in-from-bottom-6 duration-500">
             <button 
               onClick={() => setShowPrescriptionForm(false)}
-              className="flex items-center gap-2 text-gray-500 hover:text-gray-700 mb-6 transition-colors font-medium"
+              className="flex items-center gap-2 text-gray-500 hover:text-gray-900 mb-8 transition-colors font-black group"
             >
-              <ArrowLeft size={18} />
+              <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
               Back to Records
             </button>
-            <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-8">
-              <h2 className="text-2xl font-extrabold text-gray-900 mb-8">New Clinical Prescription</h2>
-              <form onSubmit={handleAddPrescription} className="space-y-8">
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">Select Patient *</label>
+            <div className="bg-white rounded-[2rem] shadow-2xl border border-gray-100 p-8 sm:p-12">
+              <div className="mb-10 text-center sm:text-left">
+                <h2 className="text-3xl font-black text-gray-900 tracking-tight">New Clinical Prescription</h2>
+                <p className="text-gray-500 mt-2">Enter clinical refraction data and dispensing requirements</p>
+              </div>
+              
+              <form onSubmit={handleAddPrescription} className="space-y-10">
+                <div className="space-y-6">
+                  <label className="block text-xs font-black text-gray-400 uppercase tracking-widest">Selected Patient *</label>
                   <select 
                     required
                     value={newPrescription.patientId}
                     onChange={e => setNewPrescription({...newPrescription, patientId: e.target.value})}
-                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none bg-white"
+                    className="w-full px-6 py-5 border border-gray-200 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none bg-gray-50/50 transition-all font-bold text-gray-700"
                   >
-                    <option value="">Choose a patient...</option>
+                    <option value="">Select a patient from database...</option>
                     {patients.map(p => (
-                      <option key={p.id} value={p.id}>{p.name} ({p.dob})</option>
+                      <option key={p.id} value={p.id}>{p.name} (Born {p.dob})</option>
                     ))}
                   </select>
                 </div>
 
-                <div className="space-y-6">
-                   <h3 className="font-bold text-gray-900 border-b pb-2">Refraction Data</h3>
+                <div className="space-y-8 pt-6 border-t border-gray-100">
+                   <h3 className="text-sm font-black text-blue-600 uppercase tracking-widest flex items-center gap-2">
+                     <FileText size={16} /> Refraction Analysis
+                   </h3>
                    
-                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                   <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                       {/* Left Eye */}
-                      <div className="space-y-4">
-                        <h4 className="text-sm font-black text-blue-600 uppercase tracking-wider">Left Eye (OS)</h4>
+                      <div className="space-y-5">
+                        <h4 className="text-xs font-black text-gray-400 uppercase tracking-widest">Left Eye (OS)</h4>
                         <div className="grid grid-cols-3 gap-4">
                           <div>
-                            <label className="block text-[10px] font-black text-gray-500 mb-1 uppercase">SPH</label>
-                            <input type="text" value={newPrescription.sphereL} onChange={e => setNewPrescription({...newPrescription, sphereL: e.target.value})} className="w-full px-3 py-2 border rounded-lg focus:ring-1 focus:ring-blue-500 outline-none font-mono" />
+                            <label className="block text-[10px] font-black text-gray-500 mb-2 uppercase">SPH</label>
+                            <input type="text" value={newPrescription.sphereL} onChange={e => setNewPrescription({...newPrescription, sphereL: e.target.value})} className="w-full px-4 py-4 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none font-mono text-center shadow-inner text-lg font-bold" />
                           </div>
                           <div>
-                            <label className="block text-[10px] font-black text-gray-500 mb-1 uppercase">CYL</label>
-                            <input type="text" value={newPrescription.cylinderL} onChange={e => setNewPrescription({...newPrescription, cylinderL: e.target.value})} className="w-full px-3 py-2 border rounded-lg focus:ring-1 focus:ring-blue-500 outline-none font-mono" />
+                            <label className="block text-[10px] font-black text-gray-500 mb-2 uppercase">CYL</label>
+                            <input type="text" value={newPrescription.cylinderL} onChange={e => setNewPrescription({...newPrescription, cylinderL: e.target.value})} className="w-full px-4 py-4 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none font-mono text-center shadow-inner text-lg font-bold" />
                           </div>
                           <div>
-                            <label className="block text-[10px] font-black text-gray-500 mb-1 uppercase">AXIS</label>
-                            <input type="text" value={newPrescription.axisL} onChange={e => setNewPrescription({...newPrescription, axisL: e.target.value})} className="w-full px-3 py-2 border rounded-lg focus:ring-1 focus:ring-blue-500 outline-none font-mono" />
+                            <label className="block text-[10px] font-black text-gray-500 mb-2 uppercase">AXIS</label>
+                            <input type="text" value={newPrescription.axisL} onChange={e => setNewPrescription({...newPrescription, axisL: e.target.value})} className="w-full px-4 py-4 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none font-mono text-center shadow-inner text-lg font-bold" />
                           </div>
                         </div>
                       </div>
 
                       {/* Right Eye */}
-                      <div className="space-y-4">
-                        <h4 className="text-sm font-black text-blue-600 uppercase tracking-wider">Right Eye (OD)</h4>
+                      <div className="space-y-5">
+                        <h4 className="text-xs font-black text-gray-400 uppercase tracking-widest">Right Eye (OD)</h4>
                         <div className="grid grid-cols-3 gap-4">
                           <div>
-                            <label className="block text-[10px] font-black text-gray-500 mb-1 uppercase">SPH</label>
-                            <input type="text" value={newPrescription.sphereR} onChange={e => setNewPrescription({...newPrescription, sphereR: e.target.value})} className="w-full px-3 py-2 border rounded-lg focus:ring-1 focus:ring-blue-500 outline-none font-mono" />
+                            <label className="block text-[10px] font-black text-gray-500 mb-2 uppercase">SPH</label>
+                            <input type="text" value={newPrescription.sphereR} onChange={e => setNewPrescription({...newPrescription, sphereR: e.target.value})} className="w-full px-4 py-4 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none font-mono text-center shadow-inner text-lg font-bold" />
                           </div>
                           <div>
-                            <label className="block text-[10px] font-black text-gray-500 mb-1 uppercase">CYL</label>
-                            <input type="text" value={newPrescription.cylinderR} onChange={e => setNewPrescription({...newPrescription, cylinderR: e.target.value})} className="w-full px-3 py-2 border rounded-lg focus:ring-1 focus:ring-blue-500 outline-none font-mono" />
+                            <label className="block text-[10px] font-black text-gray-500 mb-2 uppercase">CYL</label>
+                            <input type="text" value={newPrescription.cylinderR} onChange={e => setNewPrescription({...newPrescription, cylinderR: e.target.value})} className="w-full px-4 py-4 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none font-mono text-center shadow-inner text-lg font-bold" />
                           </div>
                           <div>
-                            <label className="block text-[10px] font-black text-gray-500 mb-1 uppercase">AXIS</label>
-                            <input type="text" value={newPrescription.axisR} onChange={e => setNewPrescription({...newPrescription, axisR: e.target.value})} className="w-full px-3 py-2 border rounded-lg focus:ring-1 focus:ring-blue-500 outline-none font-mono" />
+                            <label className="block text-[10px] font-black text-gray-500 mb-2 uppercase">AXIS</label>
+                            <input type="text" value={newPrescription.axisR} onChange={e => setNewPrescription({...newPrescription, axisR: e.target.value})} className="w-full px-4 py-4 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none font-mono text-center shadow-inner text-lg font-bold" />
                           </div>
                         </div>
                       </div>
                    </div>
 
-                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-10">
                       <div>
-                        <label className="block text-sm font-bold text-gray-700 mb-2">ADD Power</label>
-                        <input type="text" value={newPrescription.add} onChange={e => setNewPrescription({...newPrescription, add: e.target.value})} className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-mono" placeholder="+0.00" />
+                        <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-3">Addition Power (ADD)</label>
+                        <input type="text" value={newPrescription.add} onChange={e => setNewPrescription({...newPrescription, add: e.target.value})} className="w-full px-6 py-5 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none font-mono shadow-inner text-xl font-black text-blue-600" placeholder="+0.00" />
                       </div>
                       <div>
-                        <label className="block text-sm font-bold text-gray-700 mb-2">Examination Date</label>
-                        <input required type="date" value={newPrescription.date} onChange={e => setNewPrescription({...newPrescription, date: e.target.value})} className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" />
+                        <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-3">Examination Date</label>
+                        <input required type="date" value={newPrescription.date} onChange={e => setNewPrescription({...newPrescription, date: e.target.value})} className="w-full px-6 py-5 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none bg-gray-50/50" />
                       </div>
                    </div>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">Instructions / Dispensing Notes</label>
+                <div className="space-y-6 pt-6 border-t border-gray-100">
+                  <label className="block text-xs font-black text-gray-400 uppercase tracking-widest">Dispensing Notes & Instructions</label>
                   <textarea 
-                    rows={3}
+                    rows={4}
                     value={newPrescription.notes}
                     onChange={e => setNewPrescription({...newPrescription, notes: e.target.value})}
-                    placeholder="Lens type, coating, frame details, etc."
-                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none resize-none"
+                    placeholder="Enter lens specifications, coatings, frame adjustments or any specific instructions for the lab..."
+                    className="w-full px-6 py-5 border border-gray-200 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all bg-gray-50/50 resize-none font-medium"
                   />
                 </div>
                 
-                <button 
-                  type="submit"
-                  className="w-full bg-blue-600 text-white py-4 rounded-xl font-bold text-lg hover:bg-blue-700 transition-all shadow-lg active:scale-[0.98]"
-                >
-                  Save Prescription
-                </button>
+                <div className="pt-6">
+                  <button 
+                    type="submit"
+                    className="w-full bg-blue-600 text-white py-6 rounded-[2rem] font-black text-xl hover:bg-blue-700 transition-all shadow-xl hover:shadow-blue-500/20 active:scale-[0.98]"
+                  >
+                    Authorize & Save Prescription
+                  </button>
+                  <p className="text-center text-gray-400 text-xs mt-6 uppercase tracking-widest font-bold">Clinical Authorization Required</p>
+                </div>
               </form>
             </div>
           </div>
         )}
       </main>
 
-      <footer className="bg-white border-t border-gray-200 py-6 mt-12">
-        <div className="max-w-7xl mx-auto px-4 text-center text-gray-400 text-sm">
-          &copy; {new Date().getFullYear()} OptiCare Clinical Management System. All rights reserved.
+      <footer className="bg-white border-t border-gray-200 py-10 mt-20">
+        <div className="max-w-7xl mx-auto px-4 text-center">
+          <div className="flex items-center justify-center gap-2 mb-4">
+             <Clipboard className="text-blue-600 w-6 h-6" />
+             <span className="text-lg font-black text-gray-900 tracking-tight">OptiCare</span>
+          </div>
+          <p className="text-gray-400 text-sm font-medium">
+            &copy; {new Date().getFullYear()} Clinical Management System. Professional Edition.
+          </p>
         </div>
       </footer>
     </div>
