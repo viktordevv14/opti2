@@ -9,7 +9,7 @@ const firebaseConfig = {
   projectId: "opproj2",
   storageBucket: "opproj2.appspot.com",
   messagingSenderId: "950339025419",
-  appId: "YOUR_APP_ID", // Replace with your actual App ID
+  appId: "1:950339025419:web:6710e88d0c17551532250e",
   measurementId: "YOUR_MEASUREMENT_ID" // Replace if you have it
 };
 
