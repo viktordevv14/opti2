@@ -4,7 +4,7 @@ import { getAuth } from "firebase/auth";
 
 // Firebase configuration using project data provided
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY", // Replace with your actual API key
+  apiKey: "AIzaSyCykRjr10Le1j5JXv7q1eH_K6URoI8JU3Y",
   authDomain: "opproj2.firebaseapp.com",
   projectId: "opproj2",
   storageBucket: "opproj2.appspot.com",

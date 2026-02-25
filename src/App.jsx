@@ -1,12 +1,33 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { PlusCircle, Search, User, Clipboard, UserPlus, FileText, Trash2, Calendar, Phone, Mail, X, ArrowLeft } from 'lucide-react'
-import { useLocalStorage } from './useLocalStorage'
+import { db } from './firebase'
+import { collection, addDoc, onSnapshot, query, deleteDoc, doc, orderBy } from 'firebase/firestore'
 
 function App() {
   const [activeTab, setActiveTab] = useState('dashboard')
-  const [patients, setPatients] = useLocalStorage('opticare-patients', [])
-  const [prescriptions, setPrescriptions] = useLocalStorage('opticare-prescriptions', [])
+  const [patients, setPatients] = useState([])
+  const [prescriptions, setPrescriptions] = useState([])
   const [searchTerm, setSearchTerm] = useState('')
+
+  // Load Patients from Firestore
+  useEffect(() => {
+    const q = query(collection(db, 'patients'), orderBy('createdAt', 'desc'))
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const patientsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+      setPatients(patientsData)
+    })
+    return () => unsubscribe()
+  }, [])
+
+  // Load Prescriptions from Firestore
+  useEffect(() => {
+    const q = query(collection(db, 'prescriptions'), orderBy('createdAt', 'desc'))
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const prescriptionsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+      setPrescriptions(prescriptionsData)
+    })
+    return () => unsubscribe()
+  }, [])
   const [showPatientForm, setShowPatientForm] = useState(false)
   const [showPrescriptionForm, setShowPrescriptionForm] = useState(false)
   const [selectedPatientId, setSelectedPatientId] = useState(null)
@@ -45,45 +66,68 @@ function App() {
     })).filter(pr => pr.patient)
   }, [prescriptions, patients])
 
-  const handleAddPatient = (e) => {
+  const handleAddPatient = async (e) => {
     e.preventDefault()
-    const patientToAdd = { ...newPatient, id: Date.now().toString(), createdAt: new Date().toISOString() }
-    setPatients([...patients, patientToAdd])
-    setNewPatient({ 
-      name: '', dob: '', phone: '', email: '', notes: '',
-      sphereL: '0.00', cylinderL: '0.00', axisL: '0',
-      sphereR: '0.00', cylinderR: '0.00', axisR: '0',
-      add: '0.00', frameType: '', lensType: ''
-    })
-    setShowPatientForm(false)
-    setActiveTab('patients')
-  }
-
-  const handleDeletePatient = (id) => {
-    if (confirm('Are you sure you want to delete this patient and all their prescriptions?')) {
-      setPatients(patients.filter(p => p.id !== id))
-      setPrescriptions(prescriptions.filter(pr => pr.patientId !== id))
+    try {
+      const patientToAdd = { ...newPatient, createdAt: new Date().toISOString() }
+      await addDoc(collection(db, 'patients'), patientToAdd)
+      setNewPatient({
+        name: '', dob: '', phone: '', email: '', notes: '',
+        sphereL: '0.00', cylinderL: '0.00', axisL: '0',
+        sphereR: '0.00', cylinderR: '0.00', axisR: '0',
+        add: '0.00', frameType: '', lensType: ''
+      })
+      setShowPatientForm(false)
+      setActiveTab('patients')
+    } catch (error) {
+      console.error("Error adding patient: ", error)
+      alert("Error adding patient. Please try again.")
     }
   }
 
-  const handleAddPrescription = (e) => {
-    e.preventDefault()
-    const prescriptionToAdd = { ...newPrescription, id: Date.now().toString(), createdAt: new Date().toISOString() }
-    setPrescriptions([...prescriptions, prescriptionToAdd])
-    setNewPrescription({
-      patientId: '',
-      date: new Date().toISOString().split('T')[0],
-      sphereL: '0.00', cylinderL: '0.00', axisL: '0',
-      sphereR: '0.00', cylinderR: '0.00', axisR: '0',
-      add: '0.00', notes: ''
-    })
-    setShowPrescriptionForm(false)
-    setActiveTab('prescriptions')
+  const handleDeletePatient = async (id) => {
+    if (confirm('Are you sure you want to delete this patient and all their prescriptions?')) {
+      try {
+        await deleteDoc(doc(db, 'patients', id))
+        // Note: In a real app, you'd also delete prescriptions linked to this patient.
+        // For now, let's just delete the patient.
+        const linkedPrescriptions = prescriptions.filter(pr => pr.patientId === id)
+        for (const pr of linkedPrescriptions) {
+          await deleteDoc(doc(db, 'prescriptions', pr.id))
+        }
+      } catch (error) {
+        console.error("Error deleting patient: ", error)
+      }
+    }
   }
 
-  const handleDeletePrescription = (id) => {
+  const handleAddPrescription = async (e) => {
+    e.preventDefault()
+    try {
+      const prescriptionToAdd = { ...newPrescription, createdAt: new Date().toISOString() }
+      await addDoc(collection(db, 'prescriptions'), prescriptionToAdd)
+      setNewPrescription({
+        patientId: '',
+        date: new Date().toISOString().split('T')[0],
+        sphereL: '0.00', cylinderL: '0.00', axisL: '0',
+        sphereR: '0.00', cylinderR: '0.00', axisR: '0',
+        add: '0.00', notes: ''
+      })
+      setShowPrescriptionForm(false)
+      setActiveTab('prescriptions')
+    } catch (error) {
+      console.error("Error adding prescription: ", error)
+      alert("Error adding prescription. Please try again.")
+    }
+  }
+
+  const handleDeletePrescription = async (id) => {
     if (confirm('Are you sure you want to delete this prescription?')) {
-      setPrescriptions(prescriptions.filter(pr => pr.id !== id))
+      try {
+        await deleteDoc(doc(db, 'prescriptions', id))
+      } catch (error) {
+        console.error("Error deleting prescription: ", error)
+      }
     }
   }
 
@@ -214,7 +258,7 @@ function App() {
               <div className="space-y-6">
                 <h3 className="text-xl font-bold text-gray-900 px-1">Recent Enrollments</h3>
                 <div className="bg-white rounded-2xl border border-gray-200 divide-y shadow-sm overflow-hidden">
-                  {[...patients].sort((a,b) => b.id - a.id).slice(0, 5).map(p => (
+                  {[...patients].sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt)).slice(0, 5).map(p => (
                     <div key={p.id} className="p-4 flex items-center justify-between hover:bg-gray-50 transition-colors cursor-pointer group" onClick={() => { setViewingPatientId(p.id); setActiveTab('patients'); }}>
                       <div className="flex items-center gap-4">
                         <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center text-blue-600 font-bold text-lg shadow-inner">
