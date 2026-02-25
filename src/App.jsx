@@ -15,6 +15,8 @@ function App() {
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const patientsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
       setPatients(patientsData)
+    }, (error) => {
+      console.error("Firestore error (patients):", error)
     })
     return () => unsubscribe()
   }, [])
@@ -25,6 +27,8 @@ function App() {
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const prescriptionsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
       setPrescriptions(prescriptionsData)
+    }, (error) => {
+      console.error("Firestore error (prescriptions):", error)
     })
     return () => unsubscribe()
   }, [])
