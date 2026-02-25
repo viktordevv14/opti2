@@ -185,7 +185,7 @@ function App() {
               <div className="relative z-10 flex flex-col md:flex-row justify-between items-center gap-8">
                 <div className="text-center md:text-left">
                   <h2 className="text-4xl sm:text-5xl font-black text-white tracking-tight mb-4">
-                    Welcome back, <span className="text-blue-400">Dr. Simon</span>
+                    Welcome back to <span className="text-blue-400">OptiCare</span>
                   </h2>
                   <p className="text-blue-100/70 text-lg max-w-md">
                     Here's what's happening in your practice today. You have new patients and prescriptions to review.
