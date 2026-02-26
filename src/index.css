@@ -14,3 +14,32 @@ body {
 #root {
   width: 100%;
 }
+
+@media print {
+  nav, footer, button, .quick-actions, .recent-enrollments-header {
+    display: none !important;
+  }
+
+  body {
+    background-color: white;
+  }
+
+  main {
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: 100% !important;
+  }
+
+  .shadow-sm, .shadow-md, .shadow-lg, .shadow-xl, .shadow-2xl {
+    box-shadow: none !important;
+    border: 1px solid #e5e7eb !important;
+  }
+
+  .bg-gray-50, .bg-blue-50, .bg-slate-50 {
+    background-color: white !important;
+  }
+
+  .animate-in {
+    animation: none !important;
+  }
+}

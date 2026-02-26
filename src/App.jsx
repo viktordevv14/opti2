@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react'
-import { PlusCircle, Search, User, Clipboard, UserPlus, FileText, Trash2, Calendar, Phone, Mail, X, ArrowLeft, Glasses, Eye, TrendingUp, Users, Activity } from 'lucide-react'
+import { PlusCircle, Search, User, Clipboard, UserPlus, FileText, Trash2, Calendar, Phone, Mail, X, ArrowLeft, Glasses, Eye, TrendingUp, Users, Activity, Printer } from 'lucide-react'
 import { db } from './firebase'
 import { collection, addDoc, onSnapshot, query, deleteDoc, doc, orderBy } from 'firebase/firestore'
 
@@ -390,7 +390,13 @@ function App() {
                         </div>
                       </div>
                     </div>
-                    <div className="flex items-center">
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={() => window.print()}
+                        className="w-full md:w-auto bg-gray-100 text-gray-700 px-6 py-3 rounded-2xl font-bold hover:bg-gray-200 transition-all flex items-center justify-center gap-2"
+                      >
+                        <Printer size={20} /> Print Record
+                      </button>
                       <button
                         onClick={() => {
                           setNewPrescription({...newPrescription, patientId: p.id});
@@ -484,7 +490,10 @@ function App() {
                               <p className="text-sm text-gray-500 font-bold flex items-center gap-2">
                                 <Calendar size={16} className="text-blue-500" /> Issued on {new Date(presc.date).toLocaleDateString()}
                               </p>
-                              <button onClick={() => handleDeletePrescription(presc.id)} className="text-red-300 hover:text-red-500 p-2 hover:bg-red-50 rounded-xl transition-all"><Trash2 size={18} /></button>
+                              <div className="flex gap-2">
+                                <button onClick={() => window.print()} className="text-blue-300 hover:text-blue-500 p-2 hover:bg-blue-50 rounded-xl transition-all" title="Print Prescription"><Printer size={18} /></button>
+                                <button onClick={() => handleDeletePrescription(presc.id)} className="text-red-300 hover:text-red-500 p-2 hover:bg-red-50 rounded-xl transition-all" title="Delete Prescription"><Trash2 size={18} /></button>
+                              </div>
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-6">
                                <div className="bg-gray-50 rounded-2xl p-5 border border-gray-100">
@@ -844,12 +853,22 @@ function App() {
                             <Calendar size={14} className="text-blue-500" /> Issued on {new Date(presc.date).toLocaleDateString()}
                           </p>
                         </div>
-                        <button 
-                          onClick={() => handleDeletePrescription(presc.id)}
-                          className="p-3 text-red-300 hover:text-red-500 hover:bg-red-50 rounded-2xl opacity-0 group-hover:opacity-100 transition-all"
-                        >
-                          <Trash2 size={24} />
-                        </button>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => window.print()}
+                            className="p-3 text-blue-400 hover:text-blue-600 hover:bg-blue-50 rounded-2xl opacity-0 group-hover:opacity-100 transition-all"
+                            title="Print Prescription"
+                          >
+                            <Printer size={24} />
+                          </button>
+                          <button
+                            onClick={() => handleDeletePrescription(presc.id)}
+                            className="p-3 text-red-300 hover:text-red-500 hover:bg-red-50 rounded-2xl opacity-0 group-hover:opacity-100 transition-all"
+                            title="Delete Prescription"
+                          >
+                            <Trash2 size={24} />
+                          </button>
+                        </div>
                       </div>
 
                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
